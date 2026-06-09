@@ -11,7 +11,7 @@ const CONFIG = {
   ],
 
   audio: {
-    tree:   'risk-it-all.mp3',
+    tree:   'bruno-mars-risk-it-all.mp3',
     letter: 'be-with-you.mp3',
   },
 
