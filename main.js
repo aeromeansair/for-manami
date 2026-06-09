@@ -122,8 +122,6 @@
     audio.volume = 0.35;
     audio.play().catch(() => {});
 
-    // Register the navigation listener first so it always works,
-    // even if the 3-D scene below fails to initialise.
     $('toLetterBtn').addEventListener('click', () => {
       treeHandle?.dispose();
       treeHandle = null;
@@ -433,6 +431,10 @@
   $('modalClose').addEventListener('click', closeModal);
   $('modalScrim').addEventListener('click', closeModal);
 
+  // ─── FIX 1: Letter screen ───────────────────────────────────────────────────
+  // The paper must rise ABOVE the envelope shell (z-index already handles layering,
+  // but the translateY destination needs to clear the envelope top).
+  // Also guard against empty CONFIG.letter.
   function initLetterScreen() {
     const audio   = $('letterAudio');
     const stage   = $('envelopeStage');
@@ -447,7 +449,8 @@
     audio.volume = 0.3;
     audio.play().catch(() => {});
 
-    gsap.set(paper, { opacity: 0, scaleY: 0, y: 0, transformOrigin: '50% 100%' });
+    // Reset paper to hidden state inside envelope
+    gsap.set(paper, { opacity: 0, y: 0, transformOrigin: '50% 100%' });
 
     let opened = false;
 
@@ -461,6 +464,7 @@
       gsap.set(stage, { scale: 1 });
       gsap.to(prompt, { opacity: 0, duration: 0.3 });
 
+      // Open flap
       gsap.to(flap, {
         rotationX: -175,
         transformPerspective: 650,
@@ -470,17 +474,27 @@
       });
       gsap.to(seal, { opacity: 0, duration: 0.25, delay: 0.15 });
 
+      // Rise paper out of envelope — translate upward enough to clear the envelope
+      const riseAmount = Math.min(window.innerHeight * 0.38, 240);
       gsap.to(paper, {
-        opacity: 1, scaleY: 1,
-        y: `${-Math.min(window.innerHeight * 0.28, 190)}px`,
+        opacity: 1,
+        y: -riseAmount,
         duration: 0.8, delay: 0.48,
         ease: 'power3.out',
         onComplete() {
-          typeWrite(content, CONFIG.letter, 16, () => {
+          const letterText = CONFIG.letter || '';
+          if (letterText.length === 0) {
+            // Nothing to type — just hide cursor and show nav
             cursor.style.display = 'none';
             nav.hidden = false;
             gsap.fromTo(nav, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45 });
-          });
+          } else {
+            typeWrite(content, letterText, 16, () => {
+              cursor.style.display = 'none';
+              nav.hidden = false;
+              gsap.fromTo(nav, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45 });
+            });
+          }
         },
       });
     });
@@ -495,9 +509,11 @@
     let i = 0;
     el.textContent = '';
     const id = setInterval(() => {
-      el.textContent += text[i++];
-      const paper = $('letterPaper');
-      paper.scrollTop = paper.scrollHeight;
+      if (i < text.length) {
+        el.textContent += text[i++];
+        const paper = $('letterPaper');
+        paper.scrollTop = paper.scrollHeight;
+      }
       if (i >= text.length) { clearInterval(id); onDone?.(); }
     }, speed);
   }
@@ -587,97 +603,170 @@
     draw();
   }
 
+  // ─── FIX 2: Bouquet SVG — proper rose shapes ───────────────────────────────
   function buildBouquetSVG() {
     const NS = 'http://www.w3.org/2000/svg';
 
-    function el(tag, attrs) {
+    function el(tag, attrs, children) {
       const e = document.createElementNS(NS, tag);
       Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+      (children || []).forEach(c => e.appendChild(c));
       return e;
     }
 
-    const svg = el('svg', { viewBox: '0 0 400 500', xmlns: NS });
+    const svg = el('svg', { viewBox: '0 0 400 520', xmlns: NS });
 
-    const roses = [
-      [200, 82,  200, 50,  1],
-      [158, 116, 190, 42, -1],
-      [242, 116, 210, 42,  1],
-      [120, 154, 178, 34, -1],
-      [280, 154, 222, 34,  1],
-      [178, 157, 192, 28, -1],
-      [222, 157, 208, 28,  1],
+    // Rose positions: [cx, cy, stemBottomX, petalSize, stemCurveDir]
+    const roseDefs = [
+      { cx: 200, cy: 78,  sbx: 200, size: 52, dir:  0  },
+      { cx: 155, cy: 112, sbx: 190, size: 44, dir: -1  },
+      { cx: 245, cy: 112, sbx: 210, size: 44, dir:  1  },
+      { cx: 116, cy: 150, sbx: 178, size: 38, dir: -1  },
+      { cx: 284, cy: 150, sbx: 222, size: 38, dir:  1  },
+      { cx: 174, cy: 155, sbx: 192, size: 32, dir: -1  },
+      { cx: 226, cy: 155, sbx: 208, size: 32, dir:  1  },
     ];
 
-    roses.forEach(([cx, cy, sbx, , dir]) => {
+    // Draw stems first (behind roses)
+    roseDefs.forEach(({ cx, cy, sbx, dir }) => {
       svg.appendChild(el('path', {
-        d: `M ${cx} ${cy + 32} Q ${cx + dir * 10} ${cy + 100} ${sbx} 435`,
-        stroke: '#2a5010', 'stroke-width': '3.5',
+        d: `M ${cx} ${cy + 28} Q ${cx + dir * 12} ${cy + 110} ${sbx} 445`,
+        stroke: '#2d5c12', 'stroke-width': '3.2',
         fill: 'none', 'stroke-linecap': 'round',
       }));
-      const lx = cx + dir * 22, ly = cy + 85;
+      // Leaves
+      const lx = cx + dir * 24, ly = cy + 90;
       svg.appendChild(el('ellipse', {
-        cx: lx, cy: ly, rx: 17, ry: 8, fill: '#3a7020',
-        transform: `rotate(${dir * 34} ${lx} ${ly})`,
+        cx: lx, cy: ly, rx: 18, ry: 7, fill: '#3a7020',
+        transform: `rotate(${dir * 38} ${lx} ${ly})`,
+      }));
+      const lx2 = cx + dir * 14, ly2 = cy + 140;
+      svg.appendChild(el('ellipse', {
+        cx: lx2, cy: ly2, rx: 14, ry: 6, fill: '#2f6018',
+        transform: `rotate(${dir * -28} ${lx2} ${ly2})`,
       }));
     });
 
+    // Wrap/ribbon
     svg.appendChild(el('path', {
-      d: 'M 148 406 Q 200 420 252 406 L 262 448 Q 200 464 138 448 Z',
-      fill: '#c8a96e', opacity: '0.82',
+      d: 'M 148 418 Q 200 432 252 418 L 264 458 Q 200 472 136 458 Z',
+      fill: '#c8a96e', opacity: '0.88',
     }));
     svg.appendChild(el('line', {
-      x1: '143', y1: '424', x2: '257', y2: '424',
-      stroke: '#a8884a', 'stroke-width': '1.8',
+      x1: '142', y1: '436', x2: '258', y2: '436',
+      stroke: '#a8884a', 'stroke-width': '1.6',
+    }));
+    // Ribbon bow
+    svg.appendChild(el('path', {
+      d: 'M 185 418 Q 170 406 178 398 Q 186 390 200 402 Q 214 390 222 398 Q 230 406 215 418 Z',
+      fill: '#c8a96e', stroke: '#a8884a', 'stroke-width': '1',
     }));
 
-    roses.forEach(([cx, cy, , size]) => {
-      const g = el('g', { class: 'rose' });
-
-      for (let i = 0; i < 7; i++) {
-        const a = (i / 7) * Math.PI * 2;
-        const px = cx + Math.cos(a) * size * 0.52;
-        const py = cy + Math.sin(a) * size * 0.52;
-        g.appendChild(el('ellipse', {
-          cx: px, cy: py,
-          rx: size * 0.37, ry: size * 0.22,
-          fill: '#f4eff5',
-          stroke: '#e0d6e4', 'stroke-width': '0.5',
-          transform: `rotate(${(a * 180 / Math.PI) + 90} ${px} ${py})`,
-          opacity: '0.94',
-        }));
-      }
-
-      for (let i = 0; i < 5; i++) {
-        const a = (i / 5) * Math.PI * 2 + Math.PI / 5;
-        const px = cx + Math.cos(a) * size * 0.28;
-        const py = cy + Math.sin(a) * size * 0.28;
-        g.appendChild(el('ellipse', {
-          cx: px, cy: py,
-          rx: size * 0.28, ry: size * 0.17,
-          fill: '#ecdde8',
-          transform: `rotate(${(a * 180 / Math.PI) + 90} ${px} ${py})`,
-        }));
-      }
-
-      for (let i = 0; i < 4; i++) {
-        const a = (i / 4) * Math.PI * 2;
-        const px = cx + Math.cos(a) * size * 0.14;
-        const py = cy + Math.sin(a) * size * 0.14;
-        g.appendChild(el('ellipse', {
-          cx: px, cy: py,
-          rx: size * 0.16, ry: size * 0.1,
-          fill: '#e0cad6',
-          transform: `rotate(${(a * 180 / Math.PI) + 90} ${px} ${py})`,
-        }));
-      }
-
-      g.appendChild(el('circle', { cx, cy, r: size * 0.13, fill: '#d4b0c0' }));
-      g.appendChild(el('circle', { cx, cy, r: size * 0.065, fill: '#c898b0' }));
-
-      svg.appendChild(g);
+    // Draw roses on top
+    roseDefs.forEach(({ cx, cy, size }) => {
+      svg.appendChild(buildRose(NS, el, cx, cy, size));
     });
 
     return svg;
+  }
+
+  function buildRose(NS, el, cx, cy, size) {
+    const g = el('g', { class: 'rose' });
+    const s = size;
+
+    // Helper: create a petal path (teardrop shape) at angle `a`, distance `d` from center
+    function petal(d, a, rx, ry, fill, opacity, extraRotate) {
+      const px = cx + Math.cos(a) * d;
+      const py = cy + Math.sin(a) * d;
+      const rot = (a * 180 / Math.PI) + 90 + (extraRotate || 0);
+      return el('ellipse', {
+        cx: px, cy: py,
+        rx, ry,
+        fill,
+        opacity: opacity || '1',
+        transform: `rotate(${rot} ${px} ${py})`,
+      });
+    }
+
+    // Outer guard petals (5) — large, cupped outward
+    const outerColors = ['#f7c5d0', '#f2b8c6', '#f5c0cb', '#eeb0be', '#f0bac8'];
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
+      const px = cx + Math.cos(a) * s * 0.48;
+      const py = cy + Math.sin(a) * s * 0.48;
+      const rot = (a * 180 / Math.PI) + 90;
+      g.appendChild(el('ellipse', {
+        cx: px, cy: py,
+        rx: s * 0.32, ry: s * 0.42,
+        fill: outerColors[i],
+        opacity: '0.9',
+        transform: `rotate(${rot} ${px} ${py})`,
+      }));
+    }
+
+    // Middle petals (5, offset by half step) — medium, rising inward
+    const midColors = ['#f0a8bc', '#ec9fb5', '#f0aabf', '#e8a0b2', '#eda5ba'];
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2 - Math.PI / 2 + Math.PI / 5;
+      const px = cx + Math.cos(a) * s * 0.28;
+      const py = cy + Math.sin(a) * s * 0.28;
+      const rot = (a * 180 / Math.PI) + 90;
+      g.appendChild(el('ellipse', {
+        cx: px, cy: py,
+        rx: s * 0.24, ry: s * 0.32,
+        fill: midColors[i],
+        opacity: '0.95',
+        transform: `rotate(${rot} ${px} ${py})`,
+      }));
+    }
+
+    // Inner petals (4) — tighter, deeper color, taller/narrower
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2 - Math.PI / 4;
+      const px = cx + Math.cos(a) * s * 0.14;
+      const py = cy + Math.sin(a) * s * 0.14;
+      const rot = (a * 180 / Math.PI) + 90;
+      g.appendChild(el('ellipse', {
+        cx: px, cy: py,
+        rx: s * 0.14, ry: s * 0.22,
+        fill: '#e8809c',
+        opacity: '0.97',
+        transform: `rotate(${rot} ${px} ${py})`,
+      }));
+    }
+
+    // Spiral innermost "furled" petals (3) — very tight, upright
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2;
+      const px = cx + Math.cos(a) * s * 0.068;
+      const py = cy + Math.sin(a) * s * 0.068;
+      const rot = (a * 180 / Math.PI) + 90;
+      g.appendChild(el('ellipse', {
+        cx: px, cy: py,
+        rx: s * 0.09, ry: s * 0.15,
+        fill: '#d4607a',
+        transform: `rotate(${rot} ${px} ${py})`,
+      }));
+    }
+
+    // Center bud
+    g.appendChild(el('circle', { cx, cy, r: s * 0.085, fill: '#c04868' }));
+    g.appendChild(el('circle', { cx, cy, r: s * 0.042, fill: '#a83250' }));
+
+    // Sepal base (green calyx)
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
+      const px = cx + Math.cos(a) * s * 0.52;
+      const py = cy + Math.sin(a) * s * 0.52 + s * 0.18;
+      g.appendChild(el('ellipse', {
+        cx: px, cy: py,
+        rx: s * 0.07, ry: s * 0.18,
+        fill: '#3a7020', opacity: '0.7',
+        transform: `rotate(${(a * 180 / Math.PI) + 10} ${px} ${py})`,
+      }));
+    }
+
+    return g;
   }
 
   initGateParticles();
