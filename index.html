@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#07070f">
+  <title>For You ♡</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ── Screen 1: Password Gate ── -->
+  <section id="gate" class="screen active">
+    <canvas id="gateCanvas" class="gate-canvas"></canvas>
+    <div class="gate-content">
+      <div class="gate-heart">♡</div>
+      <h1 class="gate-title">For You</h1>
+      <p class="gate-hint">enter the day you were born</p>
+      <div class="gate-field">
+        <input
+          id="passwordInput"
+          type="tel"
+          inputmode="numeric"
+          maxlength="8"
+          placeholder="XX/XX/XX"
+          autocomplete="off"
+          aria-label="Password"
+        >
+      </div>
+      <button id="submitBtn" class="btn btn-primary" type="button">Open</button>
+      <p class="gate-error" id="gateError">try again...</p>
+    </div>
+  </section>
+
+  <!-- ── Screen 2: Memory Tree ── -->
+  <section id="treeScreen" class="screen">
+    <canvas id="treeCanvas"></canvas>
+    <header class="tree-header">
+      <h2 class="screen-title">Memory Tree</h2>
+      <p class="screen-sub">tap a memory to open it</p>
+    </header>
+    <footer class="tree-footer">
+      <button id="toLetterBtn" class="btn btn-ghost btn-arrow">
+        a letter for you
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M4 10h12M11 4l6 6-6 6"/>
+        </svg>
+      </button>
+    </footer>
+    <audio id="treeAudio" loop preload="none">
+      <source src="risk-it-all.mp3" type="audio/mpeg">
+    </audio>
+  </section>
+
+  <!-- ── Media Modal ── -->
+  <div id="mediaModal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-scrim" id="modalScrim"></div>
+    <div class="modal-box">
+      <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+      <div class="modal-content" id="modalContent"></div>
+    </div>
+  </div>
+
+  <!-- ── Screen 3: Letter ── -->
+  <section id="letterScreen" class="screen">
+    <div class="letter-scene">
+      <p class="letter-prompt" id="letterPrompt">tap the envelope ♡</p>
+      <div class="envelope-stage" id="envelopeStage">
+        <div class="letter-paper" id="letterPaper">
+          <div class="letter-body">
+            <span id="letterContent"></span><span class="type-cursor" id="typeCursor">|</span>
+          </div>
+        </div>
+        <div class="envelope-shell" id="envelopeShell">
+          <div class="env-back"></div>
+          <div class="env-side env-left"></div>
+          <div class="env-side env-right"></div>
+          <div class="env-bottom-fold"></div>
+          <div class="env-flap" id="envFlap"></div>
+          <div class="env-seal" id="envSeal">♡</div>
+        </div>
+      </div>
+    </div>
+    <nav class="letter-nav" id="letterNav" hidden>
+      <button id="toFlowersBtn" class="btn btn-ghost btn-arrow">
+        one last thing
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M4 10h12M11 4l6 6-6 6"/>
+        </svg>
+      </button>
+    </nav>
+    <audio id="letterAudio" loop preload="none">
+      <source src="be-with-you.mp3" type="audio/mpeg">
+    </audio>
+  </section>
+
+  <!-- ── Screen 4: Rose Bouquet ── -->
+  <section id="flowersScreen" class="screen">
+    <canvas id="petalCanvas" class="petal-canvas"></canvas>
+    <p class="flowers-message" id="flowersMessage"></p>
+    <div class="bouquet-wrap" id="bouquetWrap"></div>
+  </section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="config.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
