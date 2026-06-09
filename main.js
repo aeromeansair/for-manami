@@ -166,10 +166,13 @@
     const leafColors = [0x2b5e18, 0x3a7820, 0x4a9028, 0x1e480e];
     const leafMats = leafColors.map(c => new THREE.MeshLambertMaterial({ color: c }));
 
-    scene.add(Object.assign(
-      new THREE.Mesh(new THREE.PlaneGeometry(50, 50), new THREE.MeshLambertMaterial({ color: 0x0a1608 })),
-      { rotation: { x: -Math.PI / 2 } }
-    ));
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(50, 50),
+      new THREE.MeshLambertMaterial({ color: 0x0a1608 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.35;
+    scene.add(ground);
 
     function addBranch(from, to, rBot, rTop) {
       const dir = new THREE.Vector3().subVectors(to, from);
@@ -218,13 +221,27 @@
     addLeaves(0.9, 6.7, 0.6, 1.3);
     addLeaves(-0.8, 6.9, -0.5, 1.2);
 
+    const attachmentPoints = CONFIG.memories.map((_, i) => {
+      const count = Math.max(CONFIG.memories.length - 1, 1);
+      const progress = i / count;
+      const angle = progress * Math.PI * 2.35 + (i % 2 ? 0.22 : -0.18);
+      const radius = 1.35 + (i % 4) * 0.28;
+      const height = 2.15 + progress * 3.55 + Math.sin(i * 1.1) * 0.18;
+      return new THREE.Vector3(
+        Math.cos(angle) * radius,
+        height,
+        Math.sin(angle) * radius
+      );
+    });
+
     const texLoader = new THREE.TextureLoader();
     const photoGroups = [];
     const FW = 1.15, FH = 1.35;
 
     CONFIG.memories.forEach((mem, i) => {
-      if (i >= tips.length) return;
-      const tip = tips[i];
+      const tip = attachmentPoints[i];
+      const support = new THREE.Vector3(tip.x * 0.45, tip.y - 0.2, tip.z * 0.45);
+      addBranch(support, tip, 0.06, 0.03);
 
       const group = new THREE.Group();
       group.position.set(tip.x, tip.y - 1.0, tip.z);
@@ -439,6 +456,7 @@
   function initLetterScreen() {
     const audio   = $('letterAudio');
     const stage   = $('envelopeStage');
+    const shell   = $('envelopeShell');
     const flap    = $('envFlap');
     const seal    = $('envSeal');
     const paper   = $('letterPaper');
@@ -451,12 +469,23 @@
     audio.volume = 0.3;
     audio.play().catch(() => {});
 
+    function syncPaperRules() {
+      const bodyStyle = window.getComputedStyle(paper.querySelector('.letter-body'));
+      const paperStyle = window.getComputedStyle(paper);
+      const lineHeight = parseFloat(bodyStyle.lineHeight) || 28;
+      const paddingTop = parseFloat(paperStyle.paddingTop) || 0;
+      paper.style.setProperty('--rule-gap', `${lineHeight}px`);
+      paper.style.setProperty('--rule-offset', `${paddingTop - paper.scrollTop}px`);
+    }
+
     // Reset paper to hidden state inside envelope
     gsap.set(paper, { opacity: 0, y: 0, transformOrigin: '50% 100%' });
+    gsap.set(shell, { opacity: 1, y: 0, scale: 1 });
+    syncPaperRules();
 
     let opened = false;
 
-    gsap.to(stage, { scale: 1.02, duration: 1.5, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+    gsap.to(stage, { scale: 1.015, duration: 1.1, yoyo: true, repeat: -1, ease: 'sine.inOut' });
 
     stage.addEventListener('click', () => {
       if (opened) return;
@@ -477,16 +506,24 @@
       gsap.to(seal, { opacity: 0, duration: 0.25, delay: 0.15 });
 
       // Rise paper out of envelope — translate upward enough to clear the envelope
-      const riseAmount = Math.min(window.innerHeight * 0.38, 240);
+      const riseAmount = Math.min(window.innerHeight * 0.34, 220);
       gsap.to(paper, {
         opacity: 1,
         y: -riseAmount,
-        duration: 0.8, delay: 0.48,
-        ease: 'power3.out',
+        scale: 1.015,
+        duration: 0.9, delay: 0.42,
+        ease: 'power4.out',
         onComplete() {
           // Expand paper to full-screen reading mode
           gsap.set(paper, { y: 0 });
           paper.classList.add('letter-paper--open');
+          gsap.to(shell, {
+            opacity: 0,
+            y: 24,
+            scale: 0.92,
+            duration: 0.42,
+            ease: 'power2.inOut',
+          });
 
           const letterText = CONFIG.letter || '';
           if (letterText.length === 0) {
@@ -498,6 +535,7 @@
               cursor.style.display = 'none';
               // Scroll to top so reader starts from the beginning
               paper.scrollTop = 0;
+              syncPaperRules();
               nav.hidden = false;
               gsap.fromTo(nav, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45 });
             });
@@ -505,6 +543,8 @@
         },
       });
     });
+
+    paper.addEventListener('scroll', syncPaperRules, { passive: true });
 
     $('toFlowersBtn').addEventListener('click', () => {
       audio.pause();
@@ -520,6 +560,12 @@
         el.textContent += text[i++];
         const paper = $('letterPaper');
         paper.scrollTop = paper.scrollHeight;
+        const bodyStyle = window.getComputedStyle(paper.querySelector('.letter-body'));
+        const paperStyle = window.getComputedStyle(paper);
+        const lineHeight = parseFloat(bodyStyle.lineHeight) || 28;
+        const paddingTop = parseFloat(paperStyle.paddingTop) || 0;
+        paper.style.setProperty('--rule-gap', `${lineHeight}px`);
+        paper.style.setProperty('--rule-offset', `${paddingTop - paper.scrollTop}px`);
       }
       if (i >= text.length) { clearInterval(id); onDone?.(); }
     }, speed);

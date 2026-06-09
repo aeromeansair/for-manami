@@ -294,6 +294,7 @@ html, body {
   width: min(300px, 84vw);
   cursor: pointer;
   margin-top: clamp(60px, 14vh, 120px);
+  perspective: 1200px;
 }
 
 /* Letter paper — starts hidden inside envelope, GSAP animates it up */
@@ -310,17 +311,19 @@ html, body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   opacity: 0; /* GSAP handles initial state */
+  transform-style: preserve-3d;
+  will-change: transform, opacity;
 
   /* Ruled lines */
   background-image: repeating-linear-gradient(
     to bottom,
     transparent,
-    transparent calc(1.9em * 1 - 1px),
-    rgba(180, 160, 130, 0.25) calc(1.9em * 1 - 1px),
-    rgba(180, 160, 130, 0.25) calc(1.9em * 1)
+    transparent calc(var(--rule-gap, 1.9em) - 1px),
+    rgba(180, 160, 130, 0.25) calc(var(--rule-gap, 1.9em) - 1px),
+    rgba(180, 160, 130, 0.25) var(--rule-gap, 1.9em)
   );
-  background-size: 100% 1.9em;
-  background-position: 0 22px;
+  background-size: 100% var(--rule-gap, 1.9em);
+  background-position: 0 var(--rule-offset, 22px);
 }
 
 /* Full-screen reading mode after envelope opens */
@@ -335,12 +338,12 @@ html, body {
   background-image: repeating-linear-gradient(
     to bottom,
     transparent,
-    transparent calc(1.9em * 1 - 1px),
-    rgba(180, 160, 130, 0.25) calc(1.9em * 1 - 1px),
-    rgba(180, 160, 130, 0.25) calc(1.9em * 1)
+    transparent calc(var(--rule-gap, 1.9em) - 1px),
+    rgba(180, 160, 130, 0.25) calc(var(--rule-gap, 1.9em) - 1px),
+    rgba(180, 160, 130, 0.25) var(--rule-gap, 1.9em)
   );
-  background-size: 100% 1.9em;
-  background-position: 0 48px;
+  background-size: 100% var(--rule-gap, 1.9em);
+  background-position: 0 var(--rule-offset, 48px);
 }
 
 .letter-body {
@@ -365,6 +368,7 @@ html, body {
   width: 100%;
   aspect-ratio: 1.65 / 1;
   z-index: 2;
+  will-change: transform, opacity;
 }
 
 .env-back {
