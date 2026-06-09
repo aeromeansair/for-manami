@@ -310,6 +310,8 @@ html, body {
   max-height: 44vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(138, 96, 64, 0.38) transparent;
   opacity: 0; /* GSAP handles initial state */
   transform-style: preserve-3d;
   will-change: transform, opacity;
@@ -326,14 +328,33 @@ html, body {
   background-position: 0 var(--rule-offset, 22px);
 }
 
-/* Full-screen reading mode after envelope opens */
+.letter-paper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.letter-paper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.letter-paper::-webkit-scrollbar-thumb {
+  background: rgba(138, 96, 64, 0.38);
+  border-radius: 999px;
+  border: 2px solid rgba(250, 246, 240, 0.9);
+}
+
+/* Open letter mode after envelope opens */
 .letter-paper--open {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
+  left: 50%; top: 50%;
+  right: auto; bottom: auto;
+  width: min(720px, 90vw);
+  height: min(82vh, 860px);
   z-index: 10;
-  border-radius: 0;
-  max-height: 100vh;
-  padding: 48px 28px 100px;
+  transform: translate(-50%, -50%);
+  border-radius: 5px;
+  max-height: none;
+  padding: clamp(28px, 4vw, 46px) clamp(22px, 3vw, 40px) 40px;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.45), 0 2px 0 rgba(255, 255, 255, 0.35) inset;
   background-color: var(--paper);
   background-image: repeating-linear-gradient(
     to bottom,
@@ -343,7 +364,7 @@ html, body {
     rgba(180, 160, 130, 0.25) var(--rule-gap, 1.9em)
   );
   background-size: 100% var(--rule-gap, 1.9em);
-  background-position: 0 var(--rule-offset, 48px);
+  background-position: 0 var(--rule-offset, 42px);
 }
 
 .letter-body {
