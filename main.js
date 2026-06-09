@@ -119,6 +119,7 @@
     gsap.fromTo(screens.tree, { opacity: 0 }, { opacity: 1, duration: 0.7 });
 
     const audio = $('treeAudio');
+    audio.src = CONFIG.audio.tree;
     audio.volume = 0.35;
     audio.play().catch(() => {});
 
@@ -446,6 +447,7 @@
     const prompt  = $('letterPrompt');
     const nav     = $('letterNav');
 
+    audio.src = CONFIG.audio.letter;
     audio.volume = 0.3;
     audio.play().catch(() => {});
 
@@ -482,15 +484,20 @@
         duration: 0.8, delay: 0.48,
         ease: 'power3.out',
         onComplete() {
+          // Expand paper to full-screen reading mode
+          gsap.set(paper, { y: 0 });
+          paper.classList.add('letter-paper--open');
+
           const letterText = CONFIG.letter || '';
           if (letterText.length === 0) {
-            // Nothing to type — just hide cursor and show nav
             cursor.style.display = 'none';
             nav.hidden = false;
             gsap.fromTo(nav, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45 });
           } else {
             typeWrite(content, letterText, 16, () => {
               cursor.style.display = 'none';
+              // Scroll to top so reader starts from the beginning
+              paper.scrollTop = 0;
               nav.hidden = false;
               gsap.fromTo(nav, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45 });
             });
@@ -591,7 +598,7 @@
         ctx.rotate(p.angle);
         ctx.beginPath();
         ctx.ellipse(0, 0, p.r, p.r * 0.55, 0, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(248,224,230,${p.op})`;
+        ctx.fillStyle = `rgba(255,255,255,${p.op})`;
         ctx.fill();
         ctx.restore();
       });
@@ -689,7 +696,7 @@
     }
 
     // Outer guard petals (5) — large, cupped outward
-    const outerColors = ['#f7c5d0', '#f2b8c6', '#f5c0cb', '#eeb0be', '#f0bac8'];
+    const outerColors = ['#ffffff', '#f5f5f5', '#fafafa', '#f0f0f0', '#f8f8f8'];
     for (let i = 0; i < 5; i++) {
       const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
       const px = cx + Math.cos(a) * s * 0.48;
@@ -705,7 +712,7 @@
     }
 
     // Middle petals (5, offset by half step) — medium, rising inward
-    const midColors = ['#f0a8bc', '#ec9fb5', '#f0aabf', '#e8a0b2', '#eda5ba'];
+    const midColors = ['#efefef', '#e8e8e8', '#ececec', '#e5e5e5', '#eaeaea'];
     for (let i = 0; i < 5; i++) {
       const a = (i / 5) * Math.PI * 2 - Math.PI / 2 + Math.PI / 5;
       const px = cx + Math.cos(a) * s * 0.28;
@@ -729,7 +736,7 @@
       g.appendChild(el('ellipse', {
         cx: px, cy: py,
         rx: s * 0.14, ry: s * 0.22,
-        fill: '#e8809c',
+        fill: '#d8d8d8',
         opacity: '0.97',
         transform: `rotate(${rot} ${px} ${py})`,
       }));
@@ -744,14 +751,14 @@
       g.appendChild(el('ellipse', {
         cx: px, cy: py,
         rx: s * 0.09, ry: s * 0.15,
-        fill: '#d4607a',
+        fill: '#cccccc',
         transform: `rotate(${rot} ${px} ${py})`,
       }));
     }
 
     // Center bud
-    g.appendChild(el('circle', { cx, cy, r: s * 0.085, fill: '#c04868' }));
-    g.appendChild(el('circle', { cx, cy, r: s * 0.042, fill: '#a83250' }));
+    g.appendChild(el('circle', { cx, cy, r: s * 0.085, fill: '#c8c8c8' }));
+    g.appendChild(el('circle', { cx, cy, r: s * 0.042, fill: '#b0b0b0' }));
 
     // Sepal base (green calyx)
     for (let i = 0; i < 5; i++) {

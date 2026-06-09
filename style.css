@@ -310,6 +310,37 @@ html, body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   opacity: 0; /* GSAP handles initial state */
+
+  /* Ruled lines */
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent calc(1.9em * 1 - 1px),
+    rgba(180, 160, 130, 0.25) calc(1.9em * 1 - 1px),
+    rgba(180, 160, 130, 0.25) calc(1.9em * 1)
+  );
+  background-size: 100% 1.9em;
+  background-position: 0 22px;
+}
+
+/* Full-screen reading mode after envelope opens */
+.letter-paper--open {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 10;
+  border-radius: 0;
+  max-height: 100vh;
+  padding: 48px 28px 100px;
+  background-color: var(--paper);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent calc(1.9em * 1 - 1px),
+    rgba(180, 160, 130, 0.25) calc(1.9em * 1 - 1px),
+    rgba(180, 160, 130, 0.25) calc(1.9em * 1)
+  );
+  background-size: 100% 1.9em;
+  background-position: 0 48px;
 }
 
 .letter-body {
@@ -390,7 +421,22 @@ html, body {
 }
 
 .letter-nav {
-  padding-bottom: clamp(20px, 5vh, 36px);
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 20;
+  display: flex; justify-content: center;
+  padding: clamp(14px, 4vh, 28px) 0;
+  background: linear-gradient(to top, rgba(250,246,240,0.98) 60%, transparent);
+}
+
+.letter-nav .btn-ghost {
+  background: rgba(42, 30, 22, 0.08);
+  border-color: rgba(42, 30, 22, 0.25);
+  color: rgba(42, 30, 22, 0.7);
+}
+.letter-nav .btn-ghost:hover {
+  background: rgba(42, 30, 22, 0.14);
+  color: rgba(42, 30, 22, 0.95);
 }
 
 
