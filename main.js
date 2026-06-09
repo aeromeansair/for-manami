@@ -118,18 +118,24 @@
     screens.tree.classList.add('active');
     gsap.fromTo(screens.tree, { opacity: 0 }, { opacity: 1, duration: 0.7 });
 
-    treeHandle = buildThreeScene();
-
     const audio = $('treeAudio');
     audio.volume = 0.35;
     audio.play().catch(() => {});
 
+    // Register the navigation listener first so it always works,
+    // even if the 3-D scene below fails to initialise.
     $('toLetterBtn').addEventListener('click', () => {
       treeHandle?.dispose();
       treeHandle = null;
       audio.pause();
       switchTo('letter', initLetterScreen);
     });
+
+    try {
+      treeHandle = buildThreeScene();
+    } catch (err) {
+      console.warn('Memory Tree: 3-D scene could not be initialised.', err);
+    }
   }
 
   function buildThreeScene() {
